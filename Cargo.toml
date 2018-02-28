@@ -1,0 +1,6 @@
+[package]
+name = "nfa"
+version = "0.1.0"
+authors = ["Antonio Cardace <anto.cardace@gmail.com>"]
+
+[dependencies]
