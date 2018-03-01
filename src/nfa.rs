@@ -1,8 +1,11 @@
-#[derive(Debug)]
-#[derive(Clone)]
+use std::collections::HashSet;
+
+pub type Vertex = u32;
+
+#[derive(Debug, Clone)]
 pub struct Nfa {
-    vertexes: Vec<u32>,
-    transitions: Vec<(u32, char, u32)>,
+    vertexes: Vec<Vertex>,
+    transitions: Vec<(Vertex, char, Vertex)>,
 }
 
 impl Nfa {
@@ -86,6 +89,23 @@ impl Nfa {
             self.transitions.push((self_final_state, 'ε', nfa_final_state));
             self.transitions.push((op_final_state, 'ε', nfa_final_state));
         }
+    }
+
+    pub fn epsilon_closure(&self, state: &Vertex) -> HashSet<Vertex> {
+        let mut closure: HashSet<Vertex> = HashSet::new();
+        let mut explored: Vec<Vertex> = Vec::new();
+        let mut unexplored = vec![*state];
+
+        while let Some(v) = unexplored.pop() {
+            explored.push(v);
+            for &(s, c, e) in self.transitions.iter() {
+                if s == v && c == 'ε' && !explored.contains(&e) {
+                    closure.insert(e);
+                    unexplored.push(e);
+                }
+            }
+        }
+        closure
     }
 }
 
