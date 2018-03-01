@@ -23,7 +23,7 @@ impl Nfa {
 
     pub fn concatenate(&mut self, operand: &Nfa) {
         // add middle ε transition and vertex
-        if self.vertexes.len() > 0 {
+        if self.vertexes.len() > 0 && operand.vertexes.len() > 0 {
             let self_final_state = *self.vertexes.last().unwrap();
             // concat vertexes
             for vertex in operand.vertexes.iter() {
@@ -35,7 +35,7 @@ impl Nfa {
             for &(s, c, e) in operand.transitions.iter() {
                 self.transitions.push((s + self_final_state + 1, c, e + self_final_state + 1));
             }
-        } else {
+        } else if operand.vertexes.len() > 0 {
             // if empty just clone
             *self = operand.clone();
         }
