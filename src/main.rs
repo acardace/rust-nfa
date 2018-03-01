@@ -1,12 +1,9 @@
 extern crate nfa;
 
-use nfa::nfa::Nfa;
+use nfa::algorithms::*;
 
 fn main() {
-    let mut a = Nfa::new('a');
-    let b = Nfa::new('b');
-    a.concatenate(&b);
-    a.or(&b);
-    a.kleene();
-    println!("{:?}", a);
+    let re = "a|bc*";
+    let nfa = re_to_nfa(&re);
+    println!("{:?}", nfa);
 }

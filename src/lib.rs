@@ -7,3 +7,4 @@ mod tests {
 }
 
 pub mod nfa;
+pub mod algorithms;
