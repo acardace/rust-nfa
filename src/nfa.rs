@@ -81,3 +81,8 @@ impl Nfa {
     }
 }
 
+impl Default for Nfa {
+    fn default() -> Nfa {
+        Nfa { vertexes: vec![], transitions: vec![] }
+    }
+}
