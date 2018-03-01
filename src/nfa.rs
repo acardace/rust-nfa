@@ -1,4 +1,5 @@
 #[derive(Debug)]
+#[derive(Clone)]
 pub struct Nfa {
     vertexes: Vec<u32>,
     transitions: Vec<(u32, char, u32)>,
