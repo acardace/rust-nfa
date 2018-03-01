@@ -1,25 +1,65 @@
 use nfa::Nfa;
+use std::str::Chars;
 
-// TODO support ()
-pub fn re_to_nfa(re: &str) -> Nfa {
+pub fn re_to_nfa(re: &str) -> Result<Nfa, &'static str> {
+    sub_re_to_nfa(&mut re.chars(), false)
+}
+
+fn sub_re_to_nfa(iter: &mut Chars, par: bool) -> Result<Nfa, &'static str> {
+    let mut prev = ' ';
     let mut nfa: Nfa = Default::default();
     let mut or_op = false;
     let mut escape_op = false;
-    for c in re.chars() {
+    while let Some(c) = iter.next() {
         match c {
             _ if escape_op => {
                 escape_op = false;
-                nfa.concatenate(&Nfa::new(c));
+                if or_op {
+                    or_op = false;
+                    nfa.or(&Nfa::new(c));
+                } else {
+                    nfa.concatenate(&Nfa::new(c));
+                }
+            }
+            ')' => {
+                if par {
+                    return Ok(nfa);
+                } else {
+                    return Err("Parse error -- unbalanced ')'");
+                }
+            }
+            '(' => {
+                match sub_re_to_nfa(iter, true) {
+                    Ok(sub_nfa) => nfa.concatenate(&sub_nfa),
+                    Err(err) => return Err(err),
+                }
+            }
+            '|' => {
+                if or_op {
+                    return Err("Parse error -- double ||");
+                } else {
+                    or_op = true;
+                }
             }
             _ if or_op => {
                 or_op = false;
                 nfa.or(&Nfa::new(c));
             }
-            '|' => or_op = true,
-            '*' => nfa.kleene(),
+            '*' => {
+                if prev != '*' {
+                    nfa.kleene();
+                } else {
+                    return Err("Parse error -- double **");
+                }
+            }
             '/' => escape_op = true,  
             _ => nfa.concatenate(&Nfa::new(c)),
         }
-    }   
-    nfa
+        prev = c;
+    }
+    if par {
+        Err("Parse error -- no closing ')'")
+    } else {
+        Ok(nfa)
+    }
 }
