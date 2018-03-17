@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 pub type Vertex = u32;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Nfa {
     vertexes: Vec<Vertex>,
     transitions: Vec<(Vertex, char, Vertex)>,
@@ -10,7 +10,10 @@ pub struct Nfa {
 
 impl Nfa {
     pub fn new(c: char) -> Nfa {
-        Nfa { vertexes: vec![0, 1], transitions: vec![(0, c, 1)] }
+        Nfa {
+            vertexes: vec![0, 1],
+            transitions: vec![(0, c, 1)],
+        }
     }
 
     fn shift_right(&mut self) {
@@ -24,23 +27,21 @@ impl Nfa {
         }
     }
 
-    pub fn concatenate(&mut self, operand: &Nfa) {
+    pub fn concatenate(&mut self, op: &Nfa) {
         // add middle ε transition and vertex
-        if self.vertexes.len() > 0 && operand.vertexes.len() > 0 {
-            let self_final_state = *self.vertexes.last().unwrap();
-            // concat vertexes
-            for vertex in operand.vertexes.iter() {
-                self.vertexes.push(*vertex + self_final_state + 1);
+        if self.vertexes.len() > 0 && op.vertexes.len() > 0 {
+            let offset = *self.vertexes.last().unwrap() + 1;
+            // concat 2nd Nfa
+            for v in &op.vertexes {
+                self.vertexes.push(*v + offset);
             }
-            // add ε move
-            self.transitions.push((self_final_state, 'ε', operand.vertexes[0] + self_final_state + 1));
-            // concat nfa copying transition function
-            for &(s, c, e) in operand.transitions.iter() {
-                self.transitions.push((s + self_final_state + 1, c, e + self_final_state + 1));
+            // connect the two
+            self.transitions.push((offset - 1, 'ε', offset));
+            for &(s, c, e) in &op.transitions {
+                self.transitions.push((s + offset, c, e + offset));
             }
-        } else if operand.vertexes.len() > 0 {
-            // if empty just clone
-            *self = operand.clone();
+        } else if op.vertexes.len() > 0 {
+            *self = op.clone();
         }
     }
 
@@ -50,7 +51,7 @@ impl Nfa {
             let final_state = *self.vertexes.last().unwrap();
             self.transitions.push((final_state, 'ε', start_state));
 
-            self.shift_right(); 
+            self.shift_right();
             let start_state = self.vertexes[0];
             self.vertexes.insert(0, start_state - 1);
             self.transitions.push((start_state - 1, 'ε', start_state));
@@ -65,7 +66,7 @@ impl Nfa {
 
     pub fn or(&mut self, operand: &Nfa) {
         if self.vertexes.len() > 0 {
-            self.shift_right(); 
+            self.shift_right();
             // add new initial state
             let self_start_state = self.vertexes[0];
             self.vertexes.insert(0, self_start_state - 1);
@@ -78,16 +79,20 @@ impl Nfa {
                 self.vertexes.push(*v + last_vertex);
             }
             for tran in operand.transitions.iter() {
-                self.transitions.push((tran.0 + last_vertex, tran.1, tran.2 + last_vertex));
+                self.transitions
+                    .push((tran.0 + last_vertex, tran.1, tran.2 + last_vertex));
             }
             // add ε move
-            self.transitions.push((0, 'ε', operand.vertexes[0] + last_vertex));
+            self.transitions
+                .push((0, 'ε', operand.vertexes[0] + last_vertex));
             let op_final_state = *self.vertexes.last().unwrap();
             // add final state
             let nfa_final_state = op_final_state + 1;
             self.vertexes.push(nfa_final_state);
-            self.transitions.push((self_final_state, 'ε', nfa_final_state));
-            self.transitions.push((op_final_state, 'ε', nfa_final_state));
+            self.transitions
+                .push((self_final_state, 'ε', nfa_final_state));
+            self.transitions
+                .push((op_final_state, 'ε', nfa_final_state));
         }
     }
 
@@ -106,11 +111,5 @@ impl Nfa {
             }
         }
         closure
-    }
-}
-
-impl Default for Nfa {
-    fn default() -> Nfa {
-        Nfa { vertexes: vec![], transitions: vec![] }
     }
 }

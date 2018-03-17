@@ -6,5 +6,7 @@ mod tests {
     }
 }
 
+pub mod lexer;
+pub mod parser;
 pub mod nfa;
 pub mod nfa_algorithms;
