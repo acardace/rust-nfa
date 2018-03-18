@@ -3,13 +3,13 @@ Learning rust by playing around with NFAs
 
 # Build NFA from REs (Thompson's construction)
 ```rust
-extern crate nfa;
-
-use nfa::algorithms::*;
-
-fn main() {
-    if let Ok(nfa) = re_to_nfa("ab*(c|d)") {
+let re = "ab|c*"
+let tokens = Lexer::new(&re).lex();
+let mut parser = Parser::new(&tokens);
+match parser.parse() {
+    Ok(nfa) => {
         println!("{:?}", nfa);
     }
+    Err(s) => println!("{}", s),
 }
 ```
