@@ -2,6 +2,7 @@ extern crate nfa;
 
 use nfa::lexer::Lexer;
 use nfa::parser::Parser;
+use nfa::dfa::Dfa;
 use std::env::*;
 
 fn main() {
@@ -10,7 +11,9 @@ fn main() {
         let mut parser = Parser::new(&tokens);
         match parser.parse() {
             Ok(nfa) => {
-                println!("{:?}", nfa);
+                println!("{:?}\n\n", nfa);
+                let dfa = Dfa::from(nfa);
+                println!("\n{:?}", dfa);
             }
             Err(s) => println!("{}", s),
         }
