@@ -1,25 +1,28 @@
 use nfa::{Nfa, Transition};
 use std::collections::{HashMap, HashSet};
+use std::rc::Rc;
 
 pub type Vertex = u32;
 
 #[derive(Debug, Clone, Default)]
 pub struct Dfa {
     vertexes: Vec<Vertex>,
+    start_state: Vertex,
     final_states: Vec<Vertex>,
     transitions: Vec<Transition>,
-    start_state: Vertex,
 }
 
+type VertexSet = Rc<Vec<Vertex>>;
+
 #[derive(Debug)]
-struct SetTransitions(Vec<Vertex>, char, Vec<Vertex>);
+struct SetTransitions(VertexSet, char, VertexSet);
 
 // Subset Construction
 impl<'a> From<&'a Nfa> for Dfa {
     fn from(nfa: &Nfa) -> Self {
-        let mut q_set: HashSet<Vec<Vertex>> = HashSet::new();
-        let q0_closure = nfa.epsilon_closure(&vec![0]);
-        q_set.insert(q0_closure.clone());
+        let mut q_set: HashSet<VertexSet> = HashSet::new();
+        let q0_closure = Rc::new(nfa.epsilon_closure(&vec![0]));
+        q_set.insert(Rc::clone(&q0_closure));
         let mut work_list = vec![q0_closure];
         let mut transitions: Vec<SetTransitions> = vec![];
 
@@ -28,18 +31,18 @@ impl<'a> From<&'a Nfa> for Dfa {
                 for t in nfa.transitions() {
                     // skip non valid chars
                     if t.get_char() != 'ε' {
-                        let mut t_set = nfa.epsilon_closure(&nfa.delta(q, t));
+                        let mut t_set = Rc::new(nfa.epsilon_closure(&nfa.delta(q, t)));
                         if !t_set.is_empty() {
-                            t_set.sort_unstable();
+                            Rc::get_mut(&mut t_set).unwrap().sort_unstable();
                             // T[q,c] <- t
                             transitions.push(SetTransitions(
-                                q.clone(),
+                                Rc::clone(q),
                                 t.get_char(),
-                                t_set.clone(),
+                                Rc::clone(&t_set),
                             ));
                             if !q_set.contains(&t_set) {
                                 // new DFA state discovered
-                                q_set.insert(t_set.clone());
+                                q_set.insert(Rc::clone(&t_set));
                                 work_list.push(t_set);
                             }
                         }
@@ -51,7 +54,7 @@ impl<'a> From<&'a Nfa> for Dfa {
         let start_state = nfa.get_start_state().unwrap();
         let final_state = nfa.get_final_state().unwrap();
         let mut dfa_final_states: Vec<Vertex> = vec![];
-        let mut nfa_dfa_mapping: HashMap<Vec<Vertex>, Vertex> = HashMap::new();
+        let mut nfa_dfa_mapping: HashMap<VertexSet, Vertex> = HashMap::new();
         let mut dfa_start_state: Vertex = 0;
         let mut i = 0;
         let dfa_states: Vec<Vertex> = q_set
